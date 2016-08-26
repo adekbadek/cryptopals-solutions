@@ -30,7 +30,7 @@ describe('challenge 3', function () {
   })
 })
 
-describe('challenge 4', function () {
+describe.skip('challenge 4', function () {
   it('detect single-character XOR', function (done) {
     this.timeout(5000)
 
@@ -78,5 +78,11 @@ describe('challenge 5', function () {
       expect(encoded).to.equal(hexStrFromCryptopals)
       done()
     })
+  })
+})
+
+describe('challenge 6', function () {
+  it('calculate Hamming distance between two strings (their bits, not chars)', function () {
+    expect(utils.calculateHammingDistance('this is a test', 'wokka wokka!!!')).to.equal(37)
   })
 })

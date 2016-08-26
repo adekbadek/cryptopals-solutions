@@ -1,5 +1,6 @@
 const fs = require('fs')
 const xor = require('bitwise-xor')
+const leftPad = require('left-pad')
 
 // decode ciphertext (hex) with key (ascii)
 const decode = (ciphertext, key) => {
@@ -96,11 +97,33 @@ const readBytesFromFile = (filePath, encoding, callback) => {
   })
 }
 
+// calculate Hamming distance between two strings
+const calculateHammingDistance = (str1, str2) => {
+  let distance = 0
+  str1.split('').map((char, i) => {
+    let char1Bits = char.charCodeAt(0).toString(2)
+    let char2Bits = str2[i].charCodeAt(0).toString(2)
+
+    if (char1Bits.length < char2Bits.length) {
+      char1Bits = leftPad(char1Bits, char2Bits.length, 0)
+    }
+    if (char1Bits.length > char2Bits.length) {
+      char2Bits = leftPad(char2Bits, char1Bits.length, 0)
+    }
+
+    xor(new Buffer(char1Bits, 'binary'), new Buffer(char2Bits, 'binary'))
+      .toString('hex')
+      .replace(/1/g, () => { distance += 1 }) // increase distance for each '1'
+  })
+  return distance
+}
+
 module.exports = {
   decode,
   encode,
   scoreString,
   getTheBest,
   getAllForSingleKeys,
-  readBytesFromFile
+  readBytesFromFile,
+  calculateHammingDistance
 }
