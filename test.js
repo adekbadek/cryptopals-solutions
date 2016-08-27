@@ -64,17 +64,24 @@ describe.skip('challenge 4', function () {
 describe('challenge 5', function () {
   const testStr = 'Kuropatwa'
   const mostSecretKey = 'butter'
-  const testEnc = utils.encode(testStr, mostSecretKey, 'utf8')
-  it('encode a message', function () {
-    expect(testEnc).to.equal('2900061b1513160215')
+  const testEncHex = utils.encode(testStr, mostSecretKey, {inputEnc: 'ascii', outputEnc: 'hex'})
+  const testEncBase64 = utils.encode(testStr, mostSecretKey, {inputEnc: 'ascii', outputEnc: 'base64'})
+  it('encode message to hex', function () {
+    expect(testEncHex).to.equal('2900061b1513160215')
   })
-  it('decode a message', function () {
-    expect(utils.decode(testEnc, mostSecretKey, 'hex')).to.equal(testStr)
+  it('decode ciphertext from hex', function () {
+    expect(utils.encode(testEncHex, mostSecretKey, {inputEnc: 'hex'})).to.equal(testStr)
+  })
+  it('encode message to base64', function () {
+    expect(testEncBase64).to.equal('KQAABgGwFQEwFgAgFQ')
+  })
+  it('decode ciphertext from base64', function () {
+    expect(utils.encode(testEncBase64, mostSecretKey, {inputEnc: 'base64'})).to.equal(testStr)
   })
   it('implement a repeating-key  XOR', function (done) {
     const hexStrFromCryptopals = '0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f'
-    utils.readBytesFromFile('aux/c5.txt', 'hex', (asHex) => {
-      const encoded = utils.encode(asHex, 'ICE', 'hex')
+    utils.readBytesFromFile('aux/c5.txt', 'ascii', (fileContents) => {
+      const encoded = utils.encode(fileContents, 'ICE', {inputEnc: 'ascii', outputEnc: 'hex'})
       expect(encoded).to.equal(hexStrFromCryptopals)
       done()
     })
