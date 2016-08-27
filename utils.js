@@ -72,8 +72,8 @@ const getAllForSingleKeys = (endcodedString, encoding, possibleKeys = 'ABCDEFGHI
 const readBytesFromFile = (filePath, encoding, callback) => {
   fs.open(filePath, 'r', function (err, fd) {
     if (err) { return console.log(err.message) }
-    const buffer = new Buffer(2048)
-    fs.read(fd, buffer, 0, 2048, 0, function (err, num) {
+    const buffer = new Buffer(99999)
+    fs.read(fd, buffer, 0, 99999, 0, function (err, num) {
       if (err) { return err }
       callback(buffer.toString(encoding, 0, num))
     })
