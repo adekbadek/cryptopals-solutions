@@ -2,25 +2,6 @@ const fs = require('fs')
 const xor = require('bitwise-xor')
 const leftPad = require('left-pad')
 
-// decode ciphertext (hex) with key (ascii)
-const decode = (ciphertext, key, encoding) => {
-  let str = ''
-  let i = 0
-  // a char in hex string is represented by two symbols
-  ciphertext.replace(/\w{2}/g, (charInHex) => {
-    // decoding is xor'ing the ciphertext char against the key char
-    // when we run out of key chars, start at key char of index 0
-    const res = xor(
-      new Buffer(charInHex, encoding),
-      new Buffer(key[i % key.length].charCodeAt(0).toString(16), encoding)
-    )
-    const asDecimal = parseInt(res.toString('hex'), 16)
-    str += String.fromCharCode(asDecimal)
-    i++
-  })
-  return str
-}
-
 // encode meassage (hex or utf8) with key (ascii)
 const encode = (message, key, encodings) => {
   let str = ''
@@ -77,7 +58,7 @@ const getAllForSingleKeys = (endcodedString, encoding, possibleKeys = 'ABCDEFGHI
   // check against every key in A-B, 0-9 (hex)
   let all = []
   for (var i = 0; i < possibleKeys.length; i++) {
-    let decoded = decode(endcodedString, possibleKeys[i], encoding)
+    let decoded = encode(endcodedString, possibleKeys[i], {inputEnc: encoding})
     all.push({
       decoded,
       key: possibleKeys[i],
@@ -121,7 +102,6 @@ const calculateHammingDistance = (str1, str2) => {
 }
 
 module.exports = {
-  decode,
   encode,
   scoreString,
   getTheBest,
