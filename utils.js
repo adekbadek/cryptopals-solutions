@@ -75,18 +75,27 @@ const readBytesFromFile = (filePath, encoding, callback) => {
   })
 }
 
-// calculate Hamming distance between two strings
-const calculateHammingDistance = (str1, str2) => {
+// calculate Hamming distance
+const calculateHammingDistance = (val1, val2, inputEnc) => {
   let distance = 0
-  str1.split('').map((char, i) => {
-    let char1Bits = char.charCodeAt(0).toString(2)
-    let char2Bits = str2[i].charCodeAt(0).toString(2)
 
-    if (char1Bits.length < char2Bits.length) {
-      char1Bits = leftPad(char1Bits, char2Bits.length, 0)
-    }
-    if (char1Bits.length > char2Bits.length) {
-      char2Bits = leftPad(char2Bits, char1Bits.length, 0)
+  const buf1 = Buffer.from(val1, inputEnc)
+  const buf2 = Buffer.from(val2, inputEnc)
+
+  // compare each byte from val1 to corresponding byte in val2
+  for (var i = 0; i < buf1.length; i++) {
+    const binary1 = buf1[i].toString(2)
+    const binary2 = buf2[i].toString(2)
+    const maxLen = Math.max(binary1.length, binary2.length)
+    xor(
+      Buffer.from(leftPad(binary1, maxLen, 0), 'binary'),
+      Buffer.from(leftPad(binary2, maxLen, 0), 'binary')
+    ).toString('hex')
+     .replace(/1/g, () => { distance += 1 }) // increase distance for each '1'
+  }
+
+  return distance
+}
     }
 
     xor(new Buffer(char1Bits, 'binary'), new Buffer(char2Bits, 'binary'))
