@@ -24,7 +24,7 @@ describe('challenge 2', function () {
 
 describe('challenge 3', function () {
   it('break a single-byte XOR cipher', function () {
-    const sortedOutput = utils.getAllForSingleKeys('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
+    const sortedOutput = utils.getAllForSingleKeys('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736', 'hex')
     const actual = utils.getTheBest(sortedOutput, 1)[0]
     expect(actual.decoded).to.equal(`Cooking MC's like a pound of bacon`)
   })
@@ -47,7 +47,7 @@ describe.skip('challenge 4', function () {
           let bestForEachLine = []
 
           for (var i = 0; i < body.length; i++) {
-            let sorted = utils.getAllForSingleKeys(body[i])
+            let sorted = utils.getAllForSingleKeys(body[i], 'hex')
             let bestOne = utils.getTheBest(sorted, 1)[0]
             bestForEachLine.push(bestOne)
           }
@@ -69,7 +69,7 @@ describe('challenge 5', function () {
     expect(testEnc).to.equal('2900061b1513160215')
   })
   it('decode a message', function () {
-    expect(utils.decode(testEnc, mostSecretKey)).to.equal(testStr)
+    expect(utils.decode(testEnc, mostSecretKey, 'hex')).to.equal(testStr)
   })
   it('implement a repeating-key  XOR', function (done) {
     const hexStrFromCryptopals = '0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f'

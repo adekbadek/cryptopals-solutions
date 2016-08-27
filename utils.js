@@ -3,7 +3,7 @@ const xor = require('bitwise-xor')
 const leftPad = require('left-pad')
 
 // decode ciphertext (hex) with key (ascii)
-const decode = (ciphertext, key) => {
+const decode = (ciphertext, key, encoding) => {
   let str = ''
   let i = 0
   // a char in hex string is represented by two symbols
@@ -11,8 +11,8 @@ const decode = (ciphertext, key) => {
     // decoding is xor'ing the ciphertext char against the key char
     // when we run out of key chars, start at key char of index 0
     const res = xor(
-      new Buffer(charInHex, 'hex'),
-      new Buffer(key[i % key.length].charCodeAt(0).toString(16), 'hex')
+      new Buffer(charInHex, encoding),
+      new Buffer(key[i % key.length].charCodeAt(0).toString(16), encoding)
     )
     const asDecimal = parseInt(res.toString('hex'), 16)
     str += String.fromCharCode(asDecimal)
@@ -71,12 +71,12 @@ const getTheBest = (scoredStrings, howMany) => {
 }
 
 // for an encoded string, decode it using every letter and single digit as one-character key; return all possibilities along with a score of englishness
-const getAllForSingleKeys = (endcodedString) => {
+const getAllForSingleKeys = (endcodedString, encoding) => {
   const possibleKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
   // check against every key in A-B, 0-9 (hex)
   let all = []
   for (var i = 0; i < possibleKeys.length; i++) {
-    let decoded = decode(endcodedString, possibleKeys[i])
+    let decoded = decode(endcodedString, possibleKeys[i], encoding)
     all.push({
       decoded,
       score: scoreString(decoded)
