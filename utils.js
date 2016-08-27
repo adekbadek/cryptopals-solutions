@@ -22,25 +22,27 @@ const decode = (ciphertext, key, encoding) => {
 }
 
 // encode meassage (hex or utf8) with key (ascii)
-const encode = (message, key, inputFormat) => {
+const encode = (message, key, encodings) => {
   let str = ''
   let i = 0
-  let symbols = []
-  if (inputFormat === 'hex') {
-    // group by two characters
-    message.replace(/\w{2}/g, (hexChar) => { symbols.push(hexChar) })
-  } else if (inputFormat === 'utf8') {
-    symbols = message.split('')
+  let bytes = []
+  if (encodings.inputEnc !== 'ascii') {
+    // hex and base64 'bytes' are 2 chars long
+    bytes = message.match(/\w{2}/g)
+  } else {
+    bytes = message.split('')
   }
-  symbols.map((symbol) => {
-    // console.log(symbol, symbol.charCodeAt(0))
-    const currKey = key[i % key.length]
-    const currChar = inputFormat === 'hex' ? symbol : symbol.charCodeAt(0).toString(16)
-    str += xor(
-      new Buffer(currChar, 'hex'),
-      new Buffer(currKey.charCodeAt(0).toString(16), 'hex')
-    ).toString('hex')
+  bytes.map((symbol) => {
+    // key is always ascii, so to XOR same encodings, turn symbol into ascii
+    symbol = new Buffer(symbol, encodings.inputEnc).toString('ascii')
+    let xored = xor(
+      symbol,
+      key[i % key.length]
+    ).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')
+    str += new Buffer(xored, encodings.inputEnc).toString('ascii')
     i++
+
+    // console.log(`${new Buffer(symbol).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')} (${symbol}) ⊕ ${new Buffer(key[i % key.length]).toString('base64').replace(/=/g, '')} (${key[i % key.length]}) = ${xored}`)
   })
   return str
 }
