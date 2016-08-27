@@ -71,14 +71,14 @@ const getTheBest = (scoredStrings, howMany) => {
 }
 
 // for an encoded string, decode it using every letter and single digit as one-character key; return all possibilities along with a score of englishness
-const getAllForSingleKeys = (endcodedString, encoding) => {
-  const possibleKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+const getAllForSingleKeys = (endcodedString, encoding, possibleKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890') => {
   // check against every key in A-B, 0-9 (hex)
   let all = []
   for (var i = 0; i < possibleKeys.length; i++) {
     let decoded = decode(endcodedString, possibleKeys[i], encoding)
     all.push({
       decoded,
+      key: possibleKeys[i],
       score: scoreString(decoded)
     })
   }
