@@ -15,15 +15,15 @@ const encode = (message, key, encodings) => {
   }
   bytes.map((symbol) => {
     // key is always ascii, so to XOR same encodings, turn symbol into ascii
-    symbol = new Buffer(symbol, encodings.inputEnc).toString('ascii')
+    symbol = Buffer.from(symbol, encodings.inputEnc).toString('ascii')
     let xored = xor(
       symbol,
       key[i % key.length]
     ).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')
-    str += new Buffer(xored, encodings.inputEnc).toString('ascii')
+    str += Buffer.from(xored, encodings.inputEnc).toString('ascii')
     i++
 
-    // console.log(`${new Buffer(symbol).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')} (${symbol}) ⊕ ${new Buffer(key[i % key.length]).toString('base64').replace(/=/g, '')} (${key[i % key.length]}) = ${xored}`)
+    // console.log(`${Buffer.from(symbol).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')} (${symbol}) ⊕ ${Buffer.from(key[i % key.length]).toString('base64').replace(/=/g, '')} (${key[i % key.length]}) = ${xored}`)
   })
   return str
 }
@@ -67,7 +67,7 @@ const getAllForSingleKeys = (endcodedString, encoding, possibleKeys = 'ABCDEFGHI
 const readBytesFromFile = (filePath, encoding, callback) => {
   fs.open(filePath, 'r', function (err, fd) {
     if (err) { return console.log(err.message) }
-    const buffer = new Buffer(99999)
+    const buffer = Buffer.alloc(99999)
     fs.read(fd, buffer, 0, 99999, 0, function (err, num) {
       if (err) { return err }
       callback(buffer.toString(encoding, 0, num))

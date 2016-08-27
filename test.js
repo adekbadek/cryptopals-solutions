@@ -9,7 +9,7 @@ describe('challenge 1', function () {
   it('convert hex to base64', function () {
     let hexStr = '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d'
     let base64Str = 'SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t'
-    expect(new Buffer(hexStr, 'hex').toString('base64')).to.equal(base64Str)
+    expect(Buffer.from(hexStr, 'hex').toString('base64')).to.equal(base64Str)
   })
 })
 
@@ -17,7 +17,7 @@ describe('challenge 2', function () {
   it('produce XOR combination of two equal-length buffers', function () {
     const strHexA = '1c0111001f010100061a024b53535009181c'
     const strHexB = '686974207468652062756c6c277320657965'
-    const result = xor(new Buffer(strHexA, 'hex'), new Buffer(strHexB, 'hex')).toString('hex')
+    const result = xor(Buffer.from(strHexA, 'hex'), Buffer.from(strHexB, 'hex')).toString('hex')
     expect(result).to.equal('746865206b696420646f6e277420706c6179')
   })
 })
