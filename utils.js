@@ -2,30 +2,30 @@ const fs = require('fs')
 const xor = require('bitwise-xor')
 const leftPad = require('left-pad')
 
-// encode meassage (hex or utf8) with key (ascii)
-const encode = (message, key, encodings) => {
-  let str = ''
-  let i = 0
-  let bytes = []
-  if (encodings.inputEnc !== 'ascii') {
-    // hex and base64 'bytes' are 2 chars long
-    bytes = message.match(/\w{2}/g)
-  } else {
-    bytes = message.split('')
-  }
-  bytes.map((symbol) => {
-    // key is always ascii, so to XOR same encodings, turn symbol into ascii
-    symbol = Buffer.from(symbol, encodings.inputEnc).toString('ascii')
-    let xored = xor(
-      symbol,
-      key[i % key.length]
-    ).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')
-    str += Buffer.from(xored, encodings.inputEnc).toString('ascii')
-    i++
+// encode message (hex or utf8) with key (ascii)
+const encode = (input, key, encodings) => {
+  const outputBuffArray = [] // array to collect results of xor
+  const inputBuff = Buffer.from(input, encodings.inputEnc) // input as buffer
+  const keyBuff = Buffer.from(key, 'ascii') // key as buffer, always ASCII
 
-    // console.log(`${Buffer.from(symbol).toString(encodings.inputEnc === 'ascii' ? encodings.outputEnc : encodings.inputEnc).replace(/=/g, '')} (${symbol}) ⊕ ${Buffer.from(key[i % key.length]).toString('base64').replace(/=/g, '')} (${key[i % key.length]}) = ${xored}`)
+  // for each byte in input
+  inputBuff.map((byte, i) => {
+    // get hex values (and pad them)
+    const val1 = leftPad(byte.toString(16), 2, 0)
+    const val2 = leftPad(keyBuff[i % keyBuff.length].toString(16), 2, 0)
+
+    // xor two buffers, each is a single byte - one from input, one from key
+    let xored = xor(
+      Buffer.from(val1, 'hex'),
+      Buffer.from(val2, 'hex')
+    ).toString('hex')
+
+    // console.log(`${val1} ⊕ ${val2} = ${xored}`)
+
+    outputBuffArray.push(`0x${xored}`) // format to hex
   })
-  return str
+  // create buffer from hex byte values in array and output as string
+  return Buffer.from(outputBuffArray, 'hex').toString(encodings.outputEnc || 'ascii')
 }
 
 // score the string for english language letters frequency

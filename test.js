@@ -73,7 +73,7 @@ describe('challenge 5', function () {
     expect(utils.encode(testEncHex, mostSecretKey, {inputEnc: 'hex'})).to.equal(testStr)
   })
   it('encode message to base64', function () {
-    expect(testEncBase64).to.equal('KQAABgGwFQEwFgAgFQ')
+    expect(testEncBase64).to.equal('KQAGGxUTFgIV')
   })
   it('decode ciphertext from base64', function () {
     expect(utils.encode(testEncBase64, mostSecretKey, {inputEnc: 'base64'})).to.equal(testStr)
