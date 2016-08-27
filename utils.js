@@ -44,13 +44,8 @@ const scoreString = (str) => {
 }
 
 // from array of objects ({decoded: String, score: Number}), get x objects with highest scores (head of sorted array)
-const getTheBest = (scoredStrings, howMany) => {
-  let res = []
-  scoredStrings.sort((a, b) => { return b.score - a.score })
-  for (var i = 0; i < howMany; i++) {
-    res.push(scoredStrings[i])
-  }
-  return res
+const getTheBest = (scoredStrings, howManyToReturn) => {
+  return scoredStrings.sort((a, b) => { return b.score - a.score }).splice(0, howManyToReturn)
 }
 
 // for an encoded string, decode it using every letter and single digit as one-character key; return all possibilities along with a score of englishness
