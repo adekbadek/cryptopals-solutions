@@ -15,6 +15,7 @@ const encode = (input, key, encodings) => {
     const val2 = leftPad(keyBuff[i % keyBuff.length].toString(16), 2, 0)
 
     // xor two buffers, each is a single byte - one from input, one from key
+    // NOTE XORing - a lot like a lock mechanism (pins ⊕ key = alignment on shear line)
     let xored = xor(
       Buffer.from(val1, 'hex'),
       Buffer.from(val2, 'hex')
@@ -50,7 +51,7 @@ const getTheBest = (scoredStrings, howManyToReturn) => {
 
 // for an encoded string, decode it using every letter and single digit as one-character key; return all possibilities along with a score of englishness
 const getAllForSingleKeys = (endcodedString, encoding, possibleKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890') => {
-  // check against every key in A-B, 0-9 (hex)
+  // check against every key in possibleKeys
   let all = []
   for (var i = 0; i < possibleKeys.length; i++) {
     let decoded = encode(endcodedString, possibleKeys[i], {inputEnc: encoding})
@@ -75,7 +76,7 @@ const readBytesFromFile = (filePath, encoding, callback) => {
   })
 }
 
-// calculate Hamming distance
+// calculate Hamming distance (edit distance)
 const calculateHammingDistance = (val1, val2) => {
   let distance = 0
 
