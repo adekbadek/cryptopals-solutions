@@ -50,16 +50,21 @@ const getTheBest = (scoredStrings, howManyToReturn) => {
 }
 
 // for an encoded string, decode it using every letter and single digit as one-character key; return all possibilities along with a score of englishness
-const getAllForSingleKeys = (endcodedString, encoding, possibleKeys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890') => {
-  // check against every key in possibleKeys
+const getAllForSingleKeys = (endcodedString, encoding) => {
   let all = []
-  for (var i = 0; i < possibleKeys.length; i++) {
-    let decoded = encode(endcodedString, possibleKeys[i], {inputEnc: encoding})
+
+  // check against any byte value
+  for (let i = 0; i < 255; i++) {
+    let possibleKey = Buffer.from([i], 'ascii')
+    let decoded = encode(endcodedString, possibleKey.toString('ascii'), {inputEnc: encoding})
+    // let decoded = encode(endcodedString, possibleKey, {inputEnc: encoding}).replace(/[\x00-\x1F\x7F-\x9F]/g, "") // remove control chars
     all.push({
       decoded,
-      key: possibleKeys[i],
+      key: possibleKey,
       score: scoreString(decoded)
     })
+
+    // console.log(`${possibleKey} => ${decoded}`)
   }
   return all
 }
@@ -84,7 +89,7 @@ const calculateHammingDistance = (val1, val2) => {
   const buf2 = Buffer.from(val2)
 
   // compare each byte from val1 to corresponding byte in val2
-  for (var i = 0; i < buf1.length; i++) {
+  for (let i = 0; i < buf1.length; i++) {
     const binary1 = buf1[i].toString(2)
     const binary2 = buf2[i].toString(2)
     const maxLen = Math.max(binary1.length, binary2.length)

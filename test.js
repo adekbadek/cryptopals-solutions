@@ -29,7 +29,7 @@ describe('challenge 3', function () {
     expect(actual.decoded).to.equal(`Cooking MC's like a pound of bacon`)
   })
   it('break a single-byte XOR cipher (base64)', function () {
-    const sortedOutput = utils.getAllForSingleKeys('OSo9Nm88Kiw9KjtvIio8PC4oKg', 'base64', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\+')
+    const sortedOutput = utils.getAllForSingleKeys('OSo9Nm88Kiw9KjtvIio8PC4oKg', 'base64')
     const actual = utils.getTheBest(sortedOutput, 1)[0]
     expect(actual.decoded).to.equal('very secret message')
   })
@@ -37,7 +37,7 @@ describe('challenge 3', function () {
 
 describe.skip('challenge 4', function () {
   it('detect single-character XOR', function (done) {
-    this.timeout(5000)
+    this.timeout(10000)
 
     https.get('https://cryptopals.com/static/challenge-data/4.txt', function (response) {
       let body = ''
