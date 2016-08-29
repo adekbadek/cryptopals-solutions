@@ -135,6 +135,58 @@ const findkeySize = (filePath, maxkeySize, callback) => {
   })
 }
 
+// helper function for findKey
+const breakIntoBlocksAndTranspose = (filePath, blockSize, encoding, callback) => {
+  readBytesFromFile(filePath, 'ascii', (file) => {
+    let transposed = []
+
+    // raw bytes as array of unsigned integers (decimal)
+    const byteArray = Array.from(Buffer.from(file, encoding))
+
+    // split these bytes into chunks of blockSize length
+    const chunkArrays = []
+    while (byteArray.length > 0) {
+      chunkArrays.push(byteArray.splice(0, blockSize))
+    }
+
+    // transpose - "make a block that is the first byte of every block, and a block that is the second byte of every block, and so on."
+    chunkArrays.map((chunk) => {
+      const byteArr = Array.from(Buffer.from(chunk, encoding))
+
+      byteArr.map((byte, ind) => {
+        if (transposed[ind] === undefined) {
+          transposed[ind] = [byteArr[ind]]
+        } else {
+          transposed[ind].push(byteArr[ind])
+        }
+      })
+    })
+
+    // convert arrays of bytes into buffers
+    transposed.map((tr, i) => {
+      transposed[i] = Buffer.from(tr)
+    })
+
+    // returns array of buffers
+    callback(transposed)
+  })
+}
+
+const findKey = (filePath, keyLength, encoding, callback) => {
+  breakIntoBlocksAndTranspose(filePath, keyLength, encoding, (transposed) => {
+    let keyBytes = []
+
+    transposed.map((buffer) => {
+      const sortedOutput = getAllForSingleKeys(buffer.toString(encoding), encoding)
+      const hexCode = getTheBest(sortedOutput, 1)[0].key.toString('hex')
+      keyBytes.push(`0x${hexCode}`)
+    })
+
+    // returns key in ASCII
+    callback(Buffer.from(keyBytes, 'ascii'))
+  })
+}
+
 module.exports = {
   encode,
   scoreString,
@@ -142,5 +194,6 @@ module.exports = {
   getAllForSingleKeys,
   readBytesFromFile,
   calculateHammingDistance,
-  findkeySize
+  findkeySize,
+  findKey
 }

@@ -104,4 +104,22 @@ describe('challenge 6', function () {
       done()
     })
   })
+  it('find key', function (done) {
+    this.timeout(10000)
+    let keySize = 29
+
+    utils.findKey('aux/c6.txt', keySize, 'base64', (key) => {
+      expect(key.toString('ascii')).to.equal(`Terminator X: Bring the noise`)
+      done()
+    })
+  })
+  it('decode repeating-key XOR ciphertext', function (done) {
+    let key = 'Terminator X: Bring the noise'
+
+    utils.readBytesFromFile('aux/c6.txt', 'ascii', (fileContents) => {
+      const plaintext = utils.encode(fileContents, key, {inputEnc: 'base64'})
+      expect(plaintext).to.contain(`I'm back and I'm ringin' the bell`)
+      done()
+    })
+  })
 })
