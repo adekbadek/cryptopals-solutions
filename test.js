@@ -23,10 +23,15 @@ describe('challenge 2', function () {
 })
 
 describe('challenge 3', function () {
-  it('break a single-byte XOR cipher', function () {
+  it('break a single-byte XOR cipher (hex)', function () {
     const sortedOutput = utils.getAllForSingleKeys('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736', 'hex')
     const actual = utils.getTheBest(sortedOutput, 1)[0]
     expect(actual.decoded).to.equal(`Cooking MC's like a pound of bacon`)
+  })
+  it('break a single-byte XOR cipher (base64)', function () {
+    const sortedOutput = utils.getAllForSingleKeys('OSo9Nm88Kiw9KjtvIio8PC4oKg', 'base64', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890\\+')
+    const actual = utils.getTheBest(sortedOutput, 1)[0]
+    expect(actual.decoded).to.equal('very secret message')
   })
 })
 
