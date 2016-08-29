@@ -89,7 +89,7 @@ describe('challenge 5', function () {
 })
 
 describe('challenge 6', function () {
-  it('calculate Hamming distance between two strings (their bits, not chars)', function () {
+  it('calculate Hamming distance', function () {
     expect(utils.calculateHammingDistance('this is a test', 'wokka wokka!!!')).to.equal(37)
   })
 })

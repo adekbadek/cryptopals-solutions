@@ -76,11 +76,11 @@ const readBytesFromFile = (filePath, encoding, callback) => {
 }
 
 // calculate Hamming distance
-const calculateHammingDistance = (val1, val2, inputEnc) => {
+const calculateHammingDistance = (val1, val2) => {
   let distance = 0
 
-  const buf1 = Buffer.from(val1, inputEnc)
-  const buf2 = Buffer.from(val2, inputEnc)
+  const buf1 = Buffer.from(val1)
+  const buf2 = Buffer.from(val2)
 
   // compare each byte from val1 to corresponding byte in val2
   for (var i = 0; i < buf1.length; i++) {
