@@ -37,7 +37,7 @@ describe('challenge 3', function () {
 
 describe.skip('challenge 4', function () {
   it('detect single-character XOR', function (done) {
-    this.timeout(10000)
+    this.timeout(20000)
 
     https.get('https://cryptopals.com/static/challenge-data/4.txt', function (response) {
       let body = ''
@@ -51,7 +51,7 @@ describe.skip('challenge 4', function () {
           // for each line, collect best scored
           let bestForEachLine = []
 
-          for (var i = 0; i < body.length; i++) {
+          for (let i = 0; i < body.length; i++) {
             let sorted = utils.getAllForSingleKeys(body[i], 'hex')
             let bestOne = utils.getTheBest(sorted, 1)[0]
             bestForEachLine.push(bestOne)
@@ -96,5 +96,12 @@ describe('challenge 5', function () {
 describe('challenge 6', function () {
   it('calculate Hamming distance', function () {
     expect(utils.calculateHammingDistance('this is a test', 'wokka wokka!!!')).to.equal(37)
+  })
+  it('find key size', function (done) {
+    utils.findkeySize('aux/c6.txt', 40, (lengths) => {
+      // keysize should be in first 5 results
+      expect(lengths.slice(0, 5)).to.include({ keySize: 29, hammingAvg: 2.3275862068965516 })
+      done()
+    })
   })
 })
