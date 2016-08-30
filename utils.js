@@ -135,49 +135,48 @@ const findkeySize = (filePath, maxkeySize, callback) => {
   })
 }
 
-// helper function for findKey
-const breakIntoBlocksAndTranspose = (filePath, blockSize, encoding, callback) => {
-  readBytesFromFile(filePath, 'ascii', (file) => {
-    let transposed = []
+// transpose - "make a block that is the first byte of every block, and a block that is the second byte of every block, and so on."
+const transposeChunks = (chunkArrays) => {
+  let transposed = []
+  chunkArrays.map((chunk) => {
+    const byteArr = Array.from(Buffer.from(chunk))
 
+    byteArr.map((byte, ind) => {
+      if (transposed[ind] === undefined) {
+        transposed[ind] = [byteArr[ind]]
+      } else {
+        transposed[ind].push(byteArr[ind])
+      }
+    })
+  })
+  return transposed
+}
+
+// helper function for findKey
+const breakIntoBlocks = (filePath, blockSize, encoding, callback) => {
+  readBytesFromFile(filePath, 'ascii', (file) => {
     // raw bytes as array of unsigned integers (decimal)
     const byteArray = Array.from(Buffer.from(file, encoding))
 
     // split these bytes into chunks of blockSize length
-    const chunkArrays = []
+    const chunks = []
     while (byteArray.length > 0) {
-      chunkArrays.push(byteArray.splice(0, blockSize))
+      chunks.push(byteArray.splice(0, blockSize))
     }
 
-    // transpose - "make a block that is the first byte of every block, and a block that is the second byte of every block, and so on."
-    chunkArrays.map((chunk) => {
-      const byteArr = Array.from(Buffer.from(chunk, encoding))
-
-      byteArr.map((byte, ind) => {
-        if (transposed[ind] === undefined) {
-          transposed[ind] = [byteArr[ind]]
-        } else {
-          transposed[ind].push(byteArr[ind])
-        }
-      })
-    })
-
-    // convert arrays of bytes into buffers
-    transposed.map((tr, i) => {
-      transposed[i] = Buffer.from(tr)
-    })
-
     // returns array of buffers
-    callback(transposed)
+    callback(chunks)
   })
 }
 
 const findKey = (filePath, keyLength, encoding, callback) => {
-  breakIntoBlocksAndTranspose(filePath, keyLength, encoding, (transposed) => {
+  breakIntoBlocks(filePath, keyLength, encoding, (chunks) => {
     let keyBytes = []
 
-    transposed.map((buffer) => {
-      const sortedOutput = getAllForSingleKeys(buffer.toString(encoding), encoding)
+    const transposed = transposeChunks(chunks)
+
+    transposed.map((byteArray) => {
+      const sortedOutput = getAllForSingleKeys(Buffer.from(byteArray).toString(encoding), encoding)
       const hexCode = getTheBest(sortedOutput, 1)[0].key.toString('hex')
       keyBytes.push(`0x${hexCode}`)
     })
