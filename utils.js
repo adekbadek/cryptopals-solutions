@@ -152,10 +152,11 @@ const transposeChunks = (chunkArrays) => {
   return transposed
 }
 
-// helper function for findKey
+// return chunks of bytes of blockSize length
 const breakIntoBlocks = (filePath, blockSize, encoding, callback) => {
   readBytesFromFile(filePath, 'ascii', (file) => {
     // raw bytes as array of unsigned integers (decimal)
+    file = encoding !== 'ascii' ? file.replace(/\n/g, '') : file
     const byteArray = Array.from(Buffer.from(file, encoding))
 
     // split these bytes into chunks of blockSize length
@@ -194,5 +195,6 @@ module.exports = {
   readBytesFromFile,
   calculateHammingDistance,
   findKeySize,
+  breakIntoBlocks,
   findKey
 }

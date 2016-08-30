@@ -4,6 +4,7 @@
     "test": "mocha"
   },
   "dependencies": {
+    "aes-js": "^2.0.0",
     "bitwise-xor": "0.0.0",
     "left-pad": "^1.1.1"
   },

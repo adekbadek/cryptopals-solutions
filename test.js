@@ -123,3 +123,26 @@ describe('challenge 6', function () {
     })
   })
 })
+
+describe('challenge 7', function () {
+  // OpenSSL CLI:
+  // $ openssl enc -aes-128-ecb -a -d -K "59454c4c4f57205355424d4152494e45" -in aux/c7.txt -out aux/plaintext.txt
+  // where: -d = decrypt, -a = -base64, -K = key in hex is the next arg
+
+  it('implement ECB mode for AES', function (done) {
+    const aesjs = require('aes-js')
+
+    const key = Array.from(Buffer.from('YELLOW SUBMARINE'))
+    const aes = new aesjs.AES(key)
+
+    utils.breakIntoBlocks('aux/c7.txt', 16, 'base64', (chunks) => {
+      let plaintext = ''
+      chunks.map((chunk) => {
+        const decryptedBytes = aes.decrypt(Buffer.from(chunk, 'base64'))
+        plaintext += Buffer.from(decryptedBytes).toString('ascii')
+      })
+      done()
+      expect(plaintext.split('\n')[0]).to.equal(`I'm back and I'm ringin' the bell `)
+    })
+  })
+})
