@@ -187,6 +187,28 @@ const findKey = (filePath, keyLength, encoding, callback) => {
   })
 }
 
+const detectECB = (buffer) => {
+  let bufferCopy = Array.from(buffer)
+  // break into blocks of 16 bytes
+  let blocks = []
+  while (bufferCopy.length > 0) {
+    blocks.push(bufferCopy.splice(0, 16))
+  }
+
+  // compare each block with each block
+  let isItECB = false
+  blocks.map((block1, i) => {
+    const block1str = block1.toString()
+    blocks.map((block2, j) => {
+      const block2str = block2.toString()
+      if (i !== j && block1str === block2str) {
+        isItECB = true
+      }
+    })
+  })
+  return isItECB
+}
+
 module.exports = {
   encode,
   scoreString,
@@ -196,5 +218,6 @@ module.exports = {
   calculateHammingDistance,
   findKeySize,
   breakIntoBlocks,
-  findKey
+  findKey,
+  detectECB
 }
