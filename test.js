@@ -98,7 +98,7 @@ describe('challenge 6', function () {
     expect(utils.calculateHammingDistance('this is a test', 'wokka wokka!!!')).to.equal(37)
   })
   it('find key size', function (done) {
-    utils.findkeySize('aux/c6.txt', 40, (lengths) => {
+    utils.findKeySize('aux/c6.txt', 40, (lengths) => {
       // keysize should be in first 5 results
       expect(lengths.slice(0, 5)).to.include({ keySize: 29, hammingAvg: 2.3275862068965516 })
       done()

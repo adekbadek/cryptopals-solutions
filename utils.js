@@ -106,7 +106,7 @@ const calculateHammingDistance = (val1, val2) => {
 // https://dbjergaard.github.io/posts/matasano_set_1.html (no spoilers)
 // NOTE if the key is 'ICE', then Hamming distance between first two occurences of key ('ICEICE') is 0. So, "when we find the hamming distance between parts of our cipher text using the correct key length, we are only finding the hamming distance between parts of the plain text" -> Choose the key length with smallest Hamming distance
 // NOTE it won't be perfect, but correct keysize should be in first ~5 results
-const findkeySize = (filePath, maxkeySize, callback) => {
+const findKeySize = (filePath, maxkeySize, callback) => {
   let possiblekeySizes = []
   readBytesFromFile(filePath, 'ascii', (file) => {
     const bytesArr = Array.from(Buffer.from(file, 'base64'))
@@ -193,6 +193,6 @@ module.exports = {
   getAllForSingleKeys,
   readBytesFromFile,
   calculateHammingDistance,
-  findkeySize,
+  findKeySize,
   findKey
 }
