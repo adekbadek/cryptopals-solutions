@@ -1,9 +1,8 @@
-
 const expect = require('chai').expect
 
-const set1 = require('./set1')
-
 describe('set 1', function () {
+  const set1 = require('./set1')
+
   describe('challenge 1', function () {
     it('convert hex to base64', function () {
       let hexStr = '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d'
@@ -159,6 +158,16 @@ describe('set 1', function () {
         })
         done()
       })
+    })
+  })
+})
+
+describe.only('set 2', function () {
+  const set2 = require('./set2')
+
+  describe('challenge 9', function () {
+    it('Implement PKCS#7 padding', function () {
+      expect(set2.PKCSPad(Buffer.from('YELLOW SUBMARINE'), 20).length).to.equal(20)
     })
   })
 })
