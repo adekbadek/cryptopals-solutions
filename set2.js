@@ -17,7 +17,7 @@ const PKCSPad = (buffer, length) => {
 }
 
 const decryptCBC = (filePath, key, iv, callback) => {
-  const aes = new aesjs.AES(Array.from(Buffer.from(key)))
+  const aes = new aesjs.AES(Buffer.from(key))
 
   set1.breakIntoBlocks(filePath, 16, 'base64', (chunks) => {
     let plaintext = ''
@@ -38,7 +38,7 @@ const decryptCBC = (filePath, key, iv, callback) => {
 }
 
 const encryptCBC = (filePath, key, iv, callback) => {
-  const aes = new aesjs.AES(Array.from(Buffer.from(key)))
+  const aes = new aesjs.AES(Buffer.from(key))
 
   set1.breakIntoBlocks(filePath, 16, 'ascii', (chunks) => {
     let ciphertext
