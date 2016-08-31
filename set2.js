@@ -37,7 +37,29 @@ const decryptCBC = (filePath, key, iv, callback) => {
   })
 }
 
+const encryptCBC = (filePath, key, iv, callback) => {
+  const aes = new aesjs.AES(Array.from(Buffer.from(key)))
+
+  set1.breakIntoBlocks(filePath, 16, 'ascii', (chunks) => {
+    let ciphertext
+    let lastBuffer = iv
+    chunks.map((chunk, i) => {
+      const currBuff = PKCSPad(Buffer.from(chunk, 'ascii'), 16)
+      // 1. xor lastBuffer with plaintext (first time it's the IV)
+      const xored = xor(lastBuffer, currBuff)
+      // 2. encrypt that
+      const encryptedBytes = aes.encrypt(xored)
+      // 3. update lastBuffer
+      lastBuffer = encryptedBytes
+      // 4. update ciphertext
+      ciphertext = i === 0 ? encryptedBytes : Buffer.concat([ciphertext, encryptedBytes])
+    })
+    callback(ciphertext.toString('base64'))
+  })
+}
+
 module.exports = {
   PKCSPad,
-  decryptCBC
+  decryptCBC,
+  encryptCBC
 }

@@ -172,13 +172,18 @@ describe.only('set 2', function () {
   })
 
   describe('challenge 10', function () {
-    it('Implement CBC mode', function () {
-      // IV is 16 bytes of value 0
-      let iv = []
-      for (var i = 0; i < 16; i++) { iv.push(`0x${0}`) }
+    // IV is 16 bytes of value 0
+    let iv = []
+    for (var i = 0; i < 16; i++) { iv.push(`0x${0}`) }
 
+    it('decrypt AES in CBC mode', function () {
       set2.decryptCBC('aux/c10.txt', 'YELLOW SUBMARINE', Buffer.from(iv), (result) => {
         expect(result.split('\n')[0]).to.equal(`I'm back and I'm ringin' the bell `)
+      })
+    })
+    it('encrypt AES in CBC mode', function () {
+      set2.encryptCBC('aux/vanilla.txt', 'YELLOW SUBMARINE', Buffer.from(iv), (result) => {
+        expect(result.substring(0, 60)).to.equal(`CRIwqt4+szDbqkNY+I0qbNXPg1XLaCM5etQ5Bt9DRFV/xIN2k8Go7jtArLIy`)
       })
     })
   })
