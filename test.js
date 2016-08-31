@@ -170,4 +170,16 @@ describe.only('set 2', function () {
       expect(set2.PKCSPad(Buffer.from('YELLOW SUBMARINE'), 20).length).to.equal(20)
     })
   })
+
+  describe('challenge 10', function () {
+    it('Implement CBC mode', function () {
+      // IV is 16 bytes of value 0
+      let iv = []
+      for (var i = 0; i < 16; i++) { iv.push(`0x${0}`) }
+
+      set2.decryptCBC('aux/c10.txt', 'YELLOW SUBMARINE', Buffer.from(iv), (result) => {
+        expect(result.split('\n')[0]).to.equal(`I'm back and I'm ringin' the bell `)
+      })
+    })
+  })
 })
