@@ -210,8 +210,27 @@ describe.only('set 2', function () {
   })
 
   describe.only('challenge 12', function () {
-
+    it('detect block size of encrypting function', function () {
+      // detect block size
+      // feed the function increasing amounts of bytes, when it produces more bytes than last time, that's a new block
+      let size = 0
+      let blockSize = 0
+      for (var i = 1; i < 40; i++) {
+        const byteArr = []
+        for (var k = 0; k < i; k++) { byteArr.push('0x00') }
+        set2.encryptAES128ECB(Buffer.from(byteArr), set2.randomBuffer(), (cipherBuff) => {
+          const newSize = Array.from(cipherBuff).length
+          if (i !== 1 && size !== newSize) { blockSize = newSize - size }
+          size = newSize
+        })
+      }
+      expect(blockSize).to.equal(16)
+    })
+    it('byte-at-a-time ECB decryption', function () {
+      const mostSecretBuff = Buffer.from('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK', 'base64')
+      set2.decryptAES128ECB(mostSecretBuff, (decrypt) => {
+        expect(decrypt.split('\n')[0]).to.equal(`Rollin' in my 5.0`)
+      })
+    })
   })
-
-
 })

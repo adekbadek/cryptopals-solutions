@@ -122,15 +122,15 @@ const detectECB = (cipherBuff, blockSize = 16) => {
   return found
 }
 
-encryptAES128CBCECBRandomly('aux/vanilla.txt', (cipherBuff, mapping) => {
-  const found = detectECB(cipherBuff)
-
-  for (let index in found) {
-    if (mapping.ECB.indexOf(parseInt(index)) >= 0) {
-      console.log(`chunks no. ${index}, ${found[index]} are definitely in ECB, rest is either CBC or ECB`)
-    }
-  }
-})
+// encryptAES128CBCECBRandomly('aux/vanilla.txt', (cipherBuff, mapping) => {
+//   const found = detectECB(cipherBuff)
+//
+//   for (let index in found) {
+//     if (mapping.ECB.indexOf(parseInt(index)) >= 0) {
+//       console.log(`chunks no. ${index}, ${found[index]} are definitely in ECB, rest is either CBC or ECB`)
+//     }
+//   }
+// })
 
 //
 // Challenge 12
@@ -149,6 +149,63 @@ const encryptAES128ECB = (buffer, key, callback) => {
   callback(cipherBuff)
 }
 
+// create buffer that has size buffSize and every byte is of value byteVal
+const sameByteBuff = (byteVal, buffSize) => {
+  const byteArr = []
+  for (var i = 0; i < buffSize; i++) { byteArr.push(byteVal) }
+  return Buffer.from(byteArr)
+}
+
+// just wrapper around encryptAES128ECB, just first appends bytes from secretBuff
+const encryptAES128ECBPlusBuff = (key, buffer, secretBuff, callback) => {
+  encryptAES128ECB(Buffer.concat([buffer, secretBuff]), key, (cipherBuff) => {
+    callback(cipherBuff)
+  })
+}
+
+// try every possible byte value (0-255)
+const tryEveryLastByte = (sameByteVal, key, secretBuff, oneByteShortInputFirstBlock, callback) => {
+  for (var i = 0; i < 255; i++) {
+    // encrypt a block of 15 same values and 1 of value i
+    const buffToEncrypt = Buffer.concat([
+      sameByteBuff(sameByteVal, 15),
+      Buffer.from([i])
+    ])
+
+    encryptAES128ECBPlusBuff(key, buffToEncrypt, secretBuff, (cipherBuff) => {
+      if (Array.from(cipherBuff.slice(0, 16)).toString() === oneByteShortInputFirstBlock.toString()) {
+        callback(i)
+      }
+    })
+  }
+}
+
+const decryptAES128ECB = (mostSecretBuff, callback) => {
+  let decodedMsg = ''
+  const key = randomBuffer()
+  const sameByteVal = 65 // 'A' here, can by any byte val, it's just for consistency
+
+  // for evert byte in mostSecretBuff
+  for (var i = 0; i < Array.from(mostSecretBuff).length; i++) {
+    const tmpSecretBuff = mostSecretBuff.slice(i, i + 16)
+
+    // 1st step: get the value of byte '0x01' (effect of padding a one-byte-short block) AES'd against key (?)
+    encryptAES128ECBPlusBuff(key, sameByteBuff(sameByteVal, 15), tmpSecretBuff, (cipherBuff) => {
+      // this last missing byte will be the first byte of mostSecretBuff
+      // 'output of the one-byte-short input':
+      let oneByteShortInputFirstBlock = Array.from(cipherBuff.slice(0, 16))
+
+      // 2nd step: find the first byte of secretBuff
+      // only the first block of mostSecretBuff's bytes is needed, the first byte of this block is what we're looking for
+      tryEveryLastByte(sameByteVal, key, tmpSecretBuff, oneByteShortInputFirstBlock, (byteDecVal) => {
+        decodedMsg += Buffer.from([byteDecVal]).toString('ascii')
+      })
+    })
+  }
+
+  callback(decodedMsg)
+}
+
 module.exports = {
   PKCSPad,
   decryptCBC,
@@ -156,5 +213,6 @@ module.exports = {
   randomBuffer,
   splitBuffer,
   detectECB,
-  encryptAES128ECB
+  encryptAES128ECB,
+  decryptAES128ECB
 }
