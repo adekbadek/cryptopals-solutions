@@ -5,7 +5,7 @@ const set1 = require('./set1')
 
 const PKCSPad = (buffer, length) => {
   if (buffer.length >= length) {
-    return 'invalid length'
+    return buffer
   }
 
   const diff = length - buffer.length
