@@ -58,6 +58,70 @@ const encryptCBC = (filePath, key, iv, callback) => {
   })
 }
 
+const getRandomInt = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+const randomBuffer = (length = 16) => {
+  let buffer = []
+  for (var i = 0; i < length; i++) {
+    buffer.push(getRandomInt(0, 255))
+  }
+  return Buffer.from(buffer)
+}
+
+// Challenge 11
+const encryptInAFunkyWay = (filePath, callback) => {
+  const aes = new aesjs.AES(randomBuffer())
+  const mapping = {ECB: [], CBC: []}
+
+  set1.readBytesFromFile(filePath, 'ascii', (file) => {
+    // prepend and append bytes
+    const fileBuff = Buffer.concat([
+      randomBuffer(getRandomInt(5, 10)),
+      Buffer.from(file, 'ascii'),
+      randomBuffer(getRandomInt(5, 10))
+    ])
+
+    const byteArray = Array.from(fileBuff)
+    // split these bytes into chunks of length 16
+    const chunks = []
+    while (byteArray.length > 0) {
+      chunks.push(byteArray.splice(0, 16))
+    }
+
+    let cipherBuff
+
+    chunks.map((chunk, i) => {
+      const currBuff = PKCSPad(Buffer.from(chunk, 'ascii'), 16)
+      const mode = Math.random() > 0.5 ? 'CBC' : 'ECB'
+      mapping[mode].push(i)
+      const encryptedBytes = mode === 'CBC' ? aes.encrypt(xor(randomBuffer(), currBuff)) : aes.encrypt(currBuff)
+
+      cipherBuff = i === 0 ? encryptedBytes : Buffer.concat([cipherBuff, encryptedBytes])
+    })
+
+    callback(cipherBuff, mapping)
+  })
+}
+
+encryptInAFunkyWay('aux/vanilla.txt', (cipherBuff, mapping) => {
+  const chunks = []
+  const byteArray = Array.from(cipherBuff)
+  while (byteArray.length > 0) { chunks.push(byteArray.splice(0, 16)) }
+  const found = {}
+  chunks.map((chunk1, i) => {
+    chunks.map((chunk2, k) => {
+      if (k !== i && found[i] !== k && found[k] !== i && Array.from(chunk1).toString() === Array.from(chunk2).toString()) { found[i] = k }
+    })
+  })
+  for (var index in found) {
+    if (mapping.ECB.indexOf(parseInt(index)) >= 0) {
+      console.log(`chunks no. ${index}, ${found[index]} are definitely in ECB, rest is either CBC or ECB`)
+    }
+  }
+})
+
 module.exports = {
   PKCSPad,
   decryptCBC,
