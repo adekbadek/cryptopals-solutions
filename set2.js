@@ -58,6 +58,10 @@ const encryptCBC = (filePath, key, iv, callback) => {
   })
 }
 
+//
+// Challenge 11
+//
+
 const getRandomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
@@ -70,8 +74,14 @@ const randomBuffer = (length = 16) => {
   return Buffer.from(buffer)
 }
 
-// Challenge 11
-const encryptInAFunkyWay = (filePath, callback) => {
+const splitBuffer = (buffer, chunkSize = 16) => {
+  const chunks = []
+  const byteArray = Array.from(buffer)
+  while (byteArray.length > 0) { chunks.push(byteArray.splice(0, chunkSize)) }
+  return chunks
+}
+
+const encryptAES128CBCECBRandomly = (filePath, callback) => {
   const aes = new aesjs.AES(randomBuffer())
   const mapping = {ECB: [], CBC: []}
 
@@ -83,16 +93,10 @@ const encryptInAFunkyWay = (filePath, callback) => {
       randomBuffer(getRandomInt(5, 10))
     ])
 
-    const byteArray = Array.from(fileBuff)
-    // split these bytes into chunks of length 16
-    const chunks = []
-    while (byteArray.length > 0) {
-      chunks.push(byteArray.splice(0, 16))
-    }
-
     let cipherBuff
 
-    chunks.map((chunk, i) => {
+    // encrypt each chunk in ECB or CBC
+    splitBuffer(fileBuff).map((chunk, i) => {
       const currBuff = PKCSPad(Buffer.from(chunk, 'ascii'), 16)
       const mode = Math.random() > 0.5 ? 'CBC' : 'ECB'
       mapping[mode].push(i)
@@ -105,25 +109,52 @@ const encryptInAFunkyWay = (filePath, callback) => {
   })
 }
 
-encryptInAFunkyWay('aux/vanilla.txt', (cipherBuff, mapping) => {
-  const chunks = []
-  const byteArray = Array.from(cipherBuff)
-  while (byteArray.length > 0) { chunks.push(byteArray.splice(0, 16)) }
+// detects ECB in a buffer (searches for same blocks of blockSize in a given buffer)
+const detectECB = (cipherBuff, blockSize = 16) => {
+  const chunks = splitBuffer(cipherBuff, blockSize)
+
   const found = {}
   chunks.map((chunk1, i) => {
     chunks.map((chunk2, k) => {
       if (k !== i && found[i] !== k && found[k] !== i && Array.from(chunk1).toString() === Array.from(chunk2).toString()) { found[i] = k }
     })
   })
-  for (var index in found) {
+  return found
+}
+
+encryptAES128CBCECBRandomly('aux/vanilla.txt', (cipherBuff, mapping) => {
+  const found = detectECB(cipherBuff)
+
+  for (let index in found) {
     if (mapping.ECB.indexOf(parseInt(index)) >= 0) {
       console.log(`chunks no. ${index}, ${found[index]} are definitely in ECB, rest is either CBC or ECB`)
     }
   }
 })
 
+//
+// Challenge 12
+//
+
+const encryptAES128ECB = (buffer, key, callback) => {
+  const aes = new aesjs.AES(key)
+  let cipherBuff
+
+  splitBuffer(buffer, 16).map((chunk, i) => {
+    const currBuff = PKCSPad(Buffer.from(chunk, 'ascii'), 16)
+    const encryptedBytes = aes.encrypt(currBuff)
+    cipherBuff = i === 0 ? encryptedBytes : Buffer.concat([cipherBuff, encryptedBytes])
+  })
+
+  callback(cipherBuff)
+}
+
 module.exports = {
   PKCSPad,
   decryptCBC,
-  encryptCBC
+  encryptCBC,
+  randomBuffer,
+  splitBuffer,
+  detectECB,
+  encryptAES128ECB
 }

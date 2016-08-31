@@ -187,4 +187,31 @@ describe.only('set 2', function () {
       })
     })
   })
+
+  describe('challenge 11', function () {
+    it('create a buffer (of n length) of random bytes', function () {
+      expect(set2.randomBuffer(16).length).to.equal(16)
+    })
+    it('split a buffer into chunks', function () {
+      expect(set2.splitBuffer(set2.randomBuffer(32), 16).length).to.equal(2)
+    })
+    const plaintext = 'NOWSZE KRZYTYNKINOWSZE KRZYTYNKINOWSZE KRZYTYNKI'
+    const key = 'YELLOW SUBMARINE'
+    it('encrypt in AES-128-ECB', function () {
+      set2.encryptAES128ECB(Buffer.from(plaintext), Buffer.from(key), (cipherBuff) => {
+        expect(cipherBuff.toString('base64')).to.equal('Qose4glninTcJP2rI6ip10KLHuIJZ4p03CT9qyOoqddCix7iCWeKdNwk/asjqKnX')
+      })
+    })
+    it('detect ECB', function () {
+      set2.encryptAES128ECB(Buffer.from(plaintext), Buffer.from(key), (cipherBuff) => {
+        expect(Object.keys(set2.detectECB(cipherBuff)).length).to.equal(2)
+      })
+    })
+  })
+
+  describe.only('challenge 12', function () {
+
+  })
+
+
 })
