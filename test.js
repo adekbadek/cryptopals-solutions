@@ -198,12 +198,12 @@ describe.only('set 2', function () {
     const plaintext = 'NOWSZE KRZYTYNKINOWSZE KRZYTYNKINOWSZE KRZYTYNKI'
     const key = 'YELLOW SUBMARINE'
     it('encrypt in AES-128-ECB', function () {
-      set2.encryptAES128ECB(Buffer.from(plaintext), Buffer.from(key), (cipherBuff) => {
+      set2.AES128ECB(Buffer.from(plaintext), Buffer.from(key), true, (cipherBuff) => {
         expect(cipherBuff.toString('base64')).to.equal('Qose4glninTcJP2rI6ip10KLHuIJZ4p03CT9qyOoqddCix7iCWeKdNwk/asjqKnX')
       })
     })
     it('detect ECB', function () {
-      set2.encryptAES128ECB(Buffer.from(plaintext), Buffer.from(key), (cipherBuff) => {
+      set2.AES128ECB(Buffer.from(plaintext), Buffer.from(key), true, (cipherBuff) => {
         expect(Object.keys(set2.detectECB(cipherBuff)).length).to.equal(2)
       })
     })
@@ -218,7 +218,7 @@ describe.only('set 2', function () {
       for (var i = 1; i < 40; i++) {
         const byteArr = []
         for (var k = 0; k < i; k++) { byteArr.push('0x00') }
-        set2.encryptAES128ECB(Buffer.from(byteArr), set2.randomBuffer(), (cipherBuff) => {
+        set2.AES128ECB(Buffer.from(byteArr), set2.randomBuffer(), true, (cipherBuff) => {
           const newSize = Array.from(cipherBuff).length
           if (i !== 1 && size !== newSize) { blockSize = newSize - size }
           size = newSize
@@ -228,7 +228,7 @@ describe.only('set 2', function () {
     })
     it('byte-at-a-time ECB decryption', function () {
       const mostSecretBuff = Buffer.from('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK', 'base64')
-      set2.decryptAES128ECB(mostSecretBuff, (decrypt) => {
+      set2.decryptAES128ECBPlusBuff(mostSecretBuff, (decrypt) => {
         expect(decrypt.split('\n')[0]).to.equal(`Rollin' in my 5.0`)
       })
     })

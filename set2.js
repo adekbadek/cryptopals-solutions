@@ -136,13 +136,13 @@ const detectECB = (cipherBuff, blockSize = 16) => {
 // Challenge 12
 //
 
-const encryptAES128ECB = (buffer, key, callback) => {
+const AES128ECB = (buffer, key, shouldEncrypt, callback) => {
   const aes = new aesjs.AES(key)
   let cipherBuff
 
   splitBuffer(buffer, 16).map((chunk, i) => {
     const currBuff = PKCSPad(Buffer.from(chunk, 'ascii'), 16)
-    const encryptedBytes = aes.encrypt(currBuff)
+    const encryptedBytes = shouldEncrypt ? aes.encrypt(currBuff) : aes.decrypt(currBuff)
     cipherBuff = i === 0 ? encryptedBytes : Buffer.concat([cipherBuff, encryptedBytes])
   })
 
@@ -156,9 +156,9 @@ const sameByteBuff = (byteVal, buffSize) => {
   return Buffer.from(byteArr)
 }
 
-// just wrapper around encryptAES128ECB, just first appends bytes from secretBuff
-const encryptAES128ECBPlusBuff = (key, buffer, secretBuff, callback) => {
-  encryptAES128ECB(Buffer.concat([buffer, secretBuff]), key, (cipherBuff) => {
+// just wrapper around AES128ECB, just first appends bytes from secretBuff
+const AES128ECBPlusBuff = (key, buffer, secretBuff, callback) => {
+  AES128ECB(Buffer.concat([buffer, secretBuff]), key, true, (cipherBuff) => {
     callback(cipherBuff)
   })
 }
@@ -172,7 +172,7 @@ const tryEveryLastByte = (sameByteVal, key, secretBuff, oneByteShortInputFirstBl
       Buffer.from([i])
     ])
 
-    encryptAES128ECBPlusBuff(key, buffToEncrypt, secretBuff, (cipherBuff) => {
+    AES128ECBPlusBuff(key, buffToEncrypt, secretBuff, (cipherBuff) => {
       if (Array.from(cipherBuff.slice(0, 16)).toString() === oneByteShortInputFirstBlock.toString()) {
         callback(i)
       }
@@ -180,7 +180,7 @@ const tryEveryLastByte = (sameByteVal, key, secretBuff, oneByteShortInputFirstBl
   }
 }
 
-const decryptAES128ECB = (mostSecretBuff, callback) => {
+const decryptAES128ECBPlusBuff = (mostSecretBuff, callback) => {
   let decodedMsg = ''
   const key = randomBuffer()
   const sameByteVal = 65 // 'A' here, can by any byte val, it's just for consistency
@@ -190,7 +190,7 @@ const decryptAES128ECB = (mostSecretBuff, callback) => {
     const tmpSecretBuff = mostSecretBuff.slice(i, i + 16)
 
     // 1st step: get the value of byte '0x01' (effect of padding a one-byte-short block) AES'd against key (?)
-    encryptAES128ECBPlusBuff(key, sameByteBuff(sameByteVal, 15), tmpSecretBuff, (cipherBuff) => {
+    AES128ECBPlusBuff(key, sameByteBuff(sameByteVal, 15), tmpSecretBuff, (cipherBuff) => {
       // this last missing byte will be the first byte of mostSecretBuff
       // 'output of the one-byte-short input':
       let oneByteShortInputFirstBlock = Array.from(cipherBuff.slice(0, 16))
@@ -213,6 +213,6 @@ module.exports = {
   randomBuffer,
   splitBuffer,
   detectECB,
-  encryptAES128ECB,
-  decryptAES128ECB
+  AES128ECB,
+  decryptAES128ECBPlusBuff
 }
