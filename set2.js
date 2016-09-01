@@ -37,6 +37,12 @@ const decryptCBC = (filePath, key, iv, callback) => {
   })
 }
 
+// if the last byte is in range (0 - buff.length), then there's padding
+const unPKCSPad = (buff) => {
+  const padSize = buff[buff.length - 1]
+  return padSize >= buff.length ? buff : buff.slice(0, buff.length - padSize)
+}
+
 const encryptCBC = (filePath, key, iv, callback) => {
   const aes = new aesjs.AES(Buffer.from(key))
 
