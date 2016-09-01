@@ -212,13 +212,36 @@ const decryptAES128ECBPlusBuff = (mostSecretBuff, callback) => {
   callback(decodedMsg)
 }
 
+//
+// Challenge 13
+//
+
+const parseToObj = (str) => {
+  const res = {}
+  str.split('&').map((keyval) => { res[keyval.split('=')[0]] = keyval.split('=')[1] })
+  return res
+}
+
+const parseToStr = (obj) => {
+  let str = ''
+  for (var key in obj) { str += `${key}=${obj[key]}&` }
+  return str.replace(/&$/, '')
+}
+
+const profileFor = (email) => {
+  return parseToStr({email: email.replace(/[=&]/g, ''), uid: 10, role: 'user'})
+}
+
 module.exports = {
   PKCSPad,
+  unPKCSPad,
   decryptCBC,
   encryptCBC,
   randomBuffer,
   splitBuffer,
   detectECB,
   AES128ECB,
-  decryptAES128ECBPlusBuff
+  decryptAES128ECBPlusBuff,
+  parseToObj,
+  profileFor
 }

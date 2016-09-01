@@ -233,4 +233,32 @@ describe.only('set 2', function () {
       })
     })
   })
+
+  describe.only('challenge 13', function () {
+    it('ECB cut-and-paste', function () {
+      const key = set2.randomBuffer()
+
+      // char from code 11
+      let padding = ''
+      for (var i = 0; i < 11; i++) { padding += String.fromCharCode(11) }
+
+      // email=nice-usern|admin--PADDING--|ame&uid=10&role=|user
+      const input = set2.profileFor(`nice-usernadmin${padding}ame`)
+
+      set2.AES128ECB(Buffer.from(input, 'ascii'), key, true, (cipherBuff) => {
+        const blocks = set2.splitBuffer(cipherBuff)
+
+        // block tranposition and omission
+        cipherBuff = Buffer.concat([
+          Buffer.from(blocks[0]),
+          Buffer.from(blocks[2]),
+          Buffer.from(blocks[1])
+        ])
+
+        set2.AES128ECB(cipherBuff, key, false, (plaintextBuff) => {
+          expect(set2.parseToObj(set2.unPKCSPad(plaintextBuff).toString('ascii')).role).to.equal('admin')
+        })
+      })
+    })
+  })
 })
