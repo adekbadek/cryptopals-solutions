@@ -11,7 +11,7 @@ const PKCSPad = (buffer, length) => {
   const diff = length - buffer.length
   let diffBuffBytes = []
   for (var i = 0; i < diff; i++) {
-    diffBuffBytes.push(`0x${diff}`)
+    diffBuffBytes.push(`0x${(diff).toString(16)}`)
   }
   return Buffer.concat([buffer, Buffer.from(diffBuffBytes)])
 }
