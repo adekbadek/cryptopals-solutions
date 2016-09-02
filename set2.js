@@ -37,12 +37,6 @@ const decryptCBC = (filePath, key, iv, callback) => {
   })
 }
 
-// if the last byte is in range (0 - buff.length), then there's padding
-const unPKCSPad = (buff) => {
-  const padSize = buff[buff.length - 1]
-  return padSize >= buff.length ? buff : buff.slice(0, buff.length - padSize)
-}
-
 const encryptCBC = (filePath, key, iv, callback) => {
   const aes = new aesjs.AES(Buffer.from(key))
 
@@ -311,10 +305,29 @@ const profileFor = (email) => {
   return parseToStr({email: email.replace(/[=&]/g, ''), uid: 10, role: 'user'})
 }
 
+//
+// Challenge 15
+//
+
+// if the last byte is in range (0 - buff.length), then there's padding
+const PKCSValidateAndUnPad = (buff) => {
+  const padSize = buff[buff.length - 1]
+  if (padSize >= buff.length) {
+    return buff // there is no padding
+  } else {
+    // there is padding, let's validate
+    Array.from(buff.slice(buff.length - padSize, buff.length)).reduce((previusValue, currentValue) => {
+      if (previusValue !== currentValue) { throw new Error('invalid PKCS#7 padding') }
+      return currentValue
+    })
+    return buff.slice(0, buff.length - padSize)
+  }
+}
+
 module.exports = {
   getRandomInt,
   PKCSPad,
-  unPKCSPad,
+  PKCSValidateAndUnPad,
   decryptCBC,
   encryptCBC,
   randomBuffer,

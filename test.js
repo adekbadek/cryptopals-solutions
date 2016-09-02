@@ -263,14 +263,14 @@ describe.only('set 2', function () {
         ])
 
         set2.AES128ECB(cipherBuff, key, false, (plaintextBuff) => {
-          expect(set2.parseToObj(set2.unPKCSPad(plaintextBuff).toString('ascii')).role).to.equal('admin')
+          expect(set2.parseToObj(set2.PKCSValidateAndUnPad(plaintextBuff).toString('ascii')).role).to.equal('admin')
         })
       })
     })
   })
 
   // it may sometimes get randoms that fail test
-  describe('challenge 14', function () {
+  describe.skip('challenge 14', function () {
     it('Byte-at-a-time ECB decryption (Harder)', function (done) {
       this.timeout(100000)
 
@@ -286,6 +286,12 @@ describe.only('set 2', function () {
           done()
         })
       })
+    })
+  })
+
+  describe('challenge 15', function () {
+    it('PKCS#7 padding validation', function () {
+      expect(set2.PKCSValidateAndUnPad(Buffer.from([89, 98, 61, 4, 4, 4, 4])).toString('hex')).to.equal('59623d')
     })
   })
 })
