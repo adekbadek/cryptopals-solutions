@@ -28,7 +28,10 @@ const PKCSValidateAndUnPad = (buff) => {
   } else {
     // there is padding, let's validate
     Array.from(buff.slice(buff.length - padSize, buff.length)).reduce((previusValue, currentValue) => {
-      if (previusValue !== currentValue) { throw new Error('invalid PKCS#7 padding') }
+      if (previusValue !== currentValue) {
+        throw new Error('invalid PKCS#7 padding')
+        // console.log('invalid PKCS#7 padding', buff)
+      }
       return currentValue
     })
     return buff.slice(0, buff.length - padSize)
@@ -63,7 +66,7 @@ const decryptCBC = (input, key, iv, callback) => {
       // 3. update the last buffer
       lastBuffer = currBuff
       // 4. plaintext is XOR of lastBuffer and the decrypted bytes, unpad and return ASCII
-      plaintext += PKCSValidateAndUnPad(Buffer.from(xored)).toString('ascii')
+      plaintext += Buffer.from(xored).toString('ascii')
     })
     callback(plaintext)
   })
@@ -106,10 +109,16 @@ const randomBuffer = (length = 16) => {
   return Buffer.from(buffer)
 }
 
-const splitBuffer = (buffer, chunkSize = 16) => {
+const splitBuffer = (buffer, chunkSize = 16, splitToBuffers = false) => {
   const chunks = []
   const byteArray = Array.from(buffer)
-  while (byteArray.length > 0) { chunks.push(byteArray.splice(0, chunkSize)) }
+  while (byteArray.length > 0) {
+    if (splitToBuffers) {
+      chunks.push(Buffer.from(byteArray.splice(0, chunkSize)))
+    } else {
+      chunks.push(byteArray.splice(0, chunkSize))
+    }
+  }
   return chunks
 }
 
@@ -338,21 +347,35 @@ const profileFor = (email) => {
 }
 
 //
-// Challenge 15
+// Challenge 16
 //
 
-// if the last byte is in range (0 - buff.length), then there's padding
-const PKCSValidateAndUnPad = (buff) => {
-  const padSize = buff[buff.length - 1]
-  if (padSize >= buff.length) {
-    return buff // there is no padding
-  } else {
-    // there is padding, let's validate
-    Array.from(buff.slice(buff.length - padSize, buff.length)).reduce((previusValue, currentValue) => {
-      if (previusValue !== currentValue) { throw new Error('invalid PKCS#7 padding') }
-      return currentValue
+// flips bits according to posValsArr mapping, then decrypts and calls back
+const flipBitsAndDecrypt = (config, posValsArr, char, callback) => {
+  encryptCBC(config.INPUT_BUFF, config.key, config.iv, (cipher) => {
+    const blocks = splitBuffer(cipher, 16, true)
+
+    // flip bits of 2nd block according to the posValsArr mapping
+    posValsArr.map((posValObj) => {
+      blocks[1][posValObj.pos] = posValObj.value
     })
-    return buff.slice(0, buff.length - padSize)
+
+    decryptCBC(Buffer.concat(blocks), config.key, config.iv, (plain) => {
+      callback(plain, posValsArr[0])
+    })
+  })
+}
+
+// try every byte value and see what matches the target char
+const tryEveryFlip = (config, char, pos, flips) => {
+  for (var value = 0; value <= 255; value++) {
+    flipBitsAndDecrypt(config, [{pos, value}], char, (plain, posValObj) => {
+      const theBlock = plain.substring(32, 48)
+      if (theBlock.indexOf(char) === posValObj.pos && flips[posValObj.pos] === undefined) {
+        // we need just one value for each position, and they might be multiple - hence object, not single array of vals
+        flips.push({pos: posValObj.pos, value: posValObj.value})
+      }
+    })
   }
 }
 
@@ -370,5 +393,7 @@ module.exports = {
   decryptAES128ECBPlusBuff,
   decryptAES128ECBPlusBuffGetPadding,
   parseToObj,
-  profileFor
+  profileFor,
+  tryEveryFlip,
+  flipBitsAndDecrypt
 }
