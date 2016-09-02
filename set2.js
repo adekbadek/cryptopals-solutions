@@ -139,9 +139,20 @@ const detectECB = (cipherBuff, blockSize = 16) => {
 // })
 
 //
-// Challenge 12
+// Challenge 12 & 14
 //
 
+// code will work for both 12 and 14
+// in 12, the paddingValue will be 0 (target-bytes sits in its own block)
+// in 14, target-bytes will not end with cipherBuff length, there will (as long as randoms buffer is not divisible by 16) be padding after the bytes of target-bytes
+
+const writeLine = (str) => {
+  process.stdout.clearLine()
+  process.stdout.cursorTo(0)
+  process.stdout.write(str)
+}
+
+// just AES-128-ECB
 const AES128ECB = (buffer, key, shouldEncrypt, callback) => {
   const aes = new aesjs.AES(key)
   let cipherBuff
@@ -163,53 +174,121 @@ const sameByteBuff = (byteVal, buffSize) => {
 }
 
 // just wrapper around AES128ECB, just first appends bytes from secretBuff
-const AES128ECBPlusBuff = (key, buffer, secretBuff, callback) => {
-  AES128ECB(Buffer.concat([buffer, secretBuff]), key, true, (cipherBuff) => {
+// ch14: and prepends random number of random bytes
+// random, but same over calls (so padding stays the same)
+const AES128ECBPlusBuff = (key, randoms, buffer, secretBuff, callback) => {
+  let toConcat = randoms ? [randoms, buffer, secretBuff] : [buffer, secretBuff]
+  AES128ECB(Buffer.concat(toConcat), key, true, (cipherBuff) => {
     callback(cipherBuff)
   })
 }
 
+const tryEveryByte = (key, randoms, sameByteVal, i, sameByteBuffPrepend, secretBuff, oneByteShortInputFirstBlock, callback) => {
+  const buffToEncrypt = Buffer.concat([
+    sameByteBuff(sameByteVal, sameByteBuffPrepend),
+    sameByteBuff(sameByteVal, 15),
+    Buffer.from([i])
+  ])
+
+  AES128ECBPlusBuff(key, randoms, buffToEncrypt, secretBuff, (cipherBuff) => {
+    if (Array.from(cipherBuff.slice(cipherBuff.length - 32, cipherBuff.length - 16)).toString() === oneByteShortInputFirstBlock.toString()) {
+      callback(i, sameByteBuffPrepend)
+    }
+  })
+}
+
 // try every possible byte value (0-255)
-const tryEveryLastByte = (sameByteVal, key, secretBuff, oneByteShortInputFirstBlock, callback) => {
+const tryEveryLastByte = (paddingValue, randoms, sameByteVal, key, secretBuff, oneByteShortInputFirstBlock, callback) => {
   for (var i = 0; i < 255; i++) {
     // encrypt a block of 15 same values and 1 of value i
-    const buffToEncrypt = Buffer.concat([
-      sameByteBuff(sameByteVal, 15),
-      Buffer.from([i])
-    ])
-
-    AES128ECBPlusBuff(key, buffToEncrypt, secretBuff, (cipherBuff) => {
-      if (Array.from(cipherBuff.slice(0, 16)).toString() === oneByteShortInputFirstBlock.toString()) {
-        callback(i)
+    if (paddingValue) {
+      tryEveryByte(key, randoms, sameByteVal, i, paddingValue, secretBuff, oneByteShortInputFirstBlock, (i, paddingValue) => {
+        callback(i, paddingValue)
+      })
+    } else {
+      for (var sameByteBuffPrepends = 0; sameByteBuffPrepends < 15; sameByteBuffPrepends++) {
+        tryEveryByte(key, randoms, sameByteVal, i, sameByteBuffPrepends, secretBuff, oneByteShortInputFirstBlock, (i, sameByteBuffPrepends) => {
+          callback(i, sameByteBuffPrepends)
+        })
       }
-    })
+    }
   }
 }
 
-const decryptAES128ECBPlusBuff = (mostSecretBuff, callback) => {
+const decryptAES128ECBPlusBuff = (key, randoms, sameByteVal, mostSecretBuff, paddingValue, callback) => {
+  // const key = randomBuffer()
   let decodedMsg = ''
-  const key = randomBuffer()
-  const sameByteVal = 65 // 'A' here, can by any byte val, it's just for consistency
 
   // for evert byte in mostSecretBuff
-  for (var i = 0; i < Array.from(mostSecretBuff).length; i++) {
+  const bytesLength = Array.from(mostSecretBuff).length
+  for (var i = 0; i < bytesLength; i++) {
+  // for (var i = 0; i < 1; i++) {
+    // only the first block of mostSecretBuff's bytes is needed, the first byte of this block is what we're looking for
     const tmpSecretBuff = mostSecretBuff.slice(i, i + 16)
+    let decodedMsgChar = ''
+
+    writeLine(`check  ${Math.floor(i / bytesLength * 100)}%  (${i}/${bytesLength})`)
+
+    // prepend bytes (one by one) to sameByteBuff to fill it so it's not padded
 
     // 1st step: get the value of byte '0x01' (effect of padding a one-byte-short block) AES'd against key (?)
-    AES128ECBPlusBuff(key, sameByteBuff(sameByteVal, 15), tmpSecretBuff, (cipherBuff) => {
-      // this last missing byte will be the first byte of mostSecretBuff
-      // 'output of the one-byte-short input':
-      let oneByteShortInputFirstBlock = Array.from(cipherBuff.slice(0, 16))
+
+    const toPrepend = Buffer.concat([
+      sameByteBuff(sameByteVal, paddingValue), // ch14 - padding offset, for ch12 it's empty buffer
+      sameByteBuff(sameByteVal, 15)
+    ])
+    AES128ECBPlusBuff(key, randoms, toPrepend, tmpSecretBuff, (cipherBuff) => {
+      // last block is part of secretBuff + (1 - 15) bytes of padding
+      // second-to-last block - the 'attacker-controlled' (last is the secretBuff)
+
+      let oneByteShortInputFirstBlock = Array.from(cipherBuff.slice(cipherBuff.length - 32, cipherBuff.length - 16))
 
       // 2nd step: find the first byte of secretBuff
-      // only the first block of mostSecretBuff's bytes is needed, the first byte of this block is what we're looking for
-      tryEveryLastByte(sameByteVal, key, tmpSecretBuff, oneByteShortInputFirstBlock, (byteDecVal) => {
-        decodedMsg += Buffer.from([byteDecVal]).toString('ascii')
+      tryEveryLastByte(paddingValue, randoms, sameByteVal, key, tmpSecretBuff, oneByteShortInputFirstBlock, (byteDecVal, paddingVal) => {
+        if (byteDecVal !== sameByteVal) {
+          decodedMsgChar = Buffer.from([byteDecVal]).toString('ascii')
+        }
       })
     })
+
+    writeLine('')
+    decodedMsg += decodedMsgChar
   }
 
   callback(decodedMsg)
+}
+
+// NOTE not very DRY ^
+const decryptAES128ECBPlusBuffGetPadding = (key, randoms, sameByteVal, mostSecretBuff, callback) => {
+  const bytesLength = Array.from(mostSecretBuff).length
+  let foundPaddingVal = false
+  for (var i = 0; i < bytesLength; i++) {
+    const tmpSecretBuff = mostSecretBuff.slice(i, i + 16)
+
+    for (var sameByteBuffPrepends = 0; sameByteBuffPrepends < 15; sameByteBuffPrepends++) {
+      if (!foundPaddingVal) {
+        writeLine(`searching for padding size... ${sameByteBuffPrepends}`)
+        const toPrepend = Buffer.concat([
+          sameByteBuff(sameByteVal, sameByteBuffPrepends),
+          sameByteBuff(sameByteVal, 15)
+        ])
+        AES128ECBPlusBuff(key, randoms, toPrepend, tmpSecretBuff, (cipherBuff) => {
+          let oneByteShortInputFirstBlock = Array.from(cipherBuff.slice(cipherBuff.length - 32, cipherBuff.length - 16))
+
+          // 2nd step: find the first byte of secretBuff
+          tryEveryLastByte(null, randoms, sameByteVal, key, tmpSecretBuff, oneByteShortInputFirstBlock, (byteDecVal, paddingVal) => {
+            if (byteDecVal !== sameByteVal) {
+              // return here, padding is sameByteBuffPrepends
+              foundPaddingVal = true
+              writeLine('found!', paddingVal)
+              callback(paddingVal)
+            }
+          })
+        })
+      }
+    }
+    writeLine('')
+  }
 }
 
 //
@@ -233,6 +312,7 @@ const profileFor = (email) => {
 }
 
 module.exports = {
+  getRandomInt,
   PKCSPad,
   unPKCSPad,
   decryptCBC,
@@ -242,6 +322,7 @@ module.exports = {
   detectECB,
   AES128ECB,
   decryptAES128ECBPlusBuff,
+  decryptAES128ECBPlusBuffGetPadding,
   parseToObj,
   profileFor
 }

@@ -209,7 +209,7 @@ describe.only('set 2', function () {
     })
   })
 
-  describe.only('challenge 12', function () {
+  describe('challenge 12', function () {
     it('detect block size of encrypting function', function () {
       // detect block size
       // feed the function increasing amounts of bytes, when it produces more bytes than last time, that's a new block
@@ -226,15 +226,22 @@ describe.only('set 2', function () {
       }
       expect(blockSize).to.equal(16)
     })
-    it('byte-at-a-time ECB decryption', function () {
+    // after ch14, this will take long time. Efficient func. in commits before 14.
+    it.skip('byte-at-a-time ECB decryption', function (done) {
+      this.timeout(100000)
+      const randomBuff = false
+      const sameByteVal = 0 // can by any byte val, it's just for consistency - but it can't be a byte that can appear in plaintext
+      const key = set2.randomBuffer()
       const mostSecretBuff = Buffer.from('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK', 'base64')
-      set2.decryptAES128ECBPlusBuff(mostSecretBuff, (decrypt) => {
+      // set2.decryptAES128ECBPlusBuff(mostSecretBuff, (decrypt) => {
+      set2.decryptAES128ECBPlusBuff(key, randomBuff, sameByteVal, mostSecretBuff, 0, (decrypt) => {
         expect(decrypt.split('\n')[0]).to.equal(`Rollin' in my 5.0`)
+        done()
       })
     })
   })
 
-  describe.only('challenge 13', function () {
+  describe('challenge 13', function () {
     it('ECB cut-and-paste', function () {
       const key = set2.randomBuffer()
 
@@ -257,6 +264,26 @@ describe.only('set 2', function () {
 
         set2.AES128ECB(cipherBuff, key, false, (plaintextBuff) => {
           expect(set2.parseToObj(set2.unPKCSPad(plaintextBuff).toString('ascii')).role).to.equal('admin')
+        })
+      })
+    })
+  })
+
+  // it may sometimes get randoms that fail test
+  describe('challenge 14', function () {
+    it('Byte-at-a-time ECB decryption (Harder)', function (done) {
+      this.timeout(100000)
+
+      const randomBuff = set2.randomBuffer(set2.getRandomInt(5, 20))
+      const sameByteVal = 0 // can by any byte val, it's just for consistency - but it can't be a byte that can appear in plaintext
+      const mostSecretBuff = Buffer.from('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK', 'base64')
+      const key = set2.randomBuffer()
+
+      // first time to get the padding - just try every padding and see what returns a letter from target-bytes
+      set2.decryptAES128ECBPlusBuffGetPadding(key, randomBuff, sameByteVal, mostSecretBuff, (padd) => {
+        set2.decryptAES128ECBPlusBuff(key, randomBuff, sameByteVal, mostSecretBuff, padd, (decrypt) => {
+          expect(decrypt.split('\n')[0]).to.equal(`Rollin' in my 5.0`)
+          done()
         })
       })
     })
