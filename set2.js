@@ -3,7 +3,7 @@ const aesjs = require('aes-js')
 
 const set1 = require('./set1')
 
-const PKCSPad = (buffer, length) => {
+const PKCSPad = (buffer, length = 16) => {
   if (buffer.length >= length) {
     return buffer
   }
@@ -16,12 +16,44 @@ const PKCSPad = (buffer, length) => {
   return Buffer.concat([buffer, Buffer.from(diffBuffBytes)])
 }
 
-const decryptCBC = (filePath, key, iv, callback) => {
+//
+// Challenge 15
+//
+
+// if the last byte is in range (0 - buff.length), then there's padding
+const PKCSValidateAndUnPad = (buff) => {
+  const padSize = buff[buff.length - 1]
+  if (padSize >= buff.length) {
+    return buff // there is no padding
+  } else {
+    // there is padding, let's validate
+    Array.from(buff.slice(buff.length - padSize, buff.length)).reduce((previusValue, currentValue) => {
+      if (previusValue !== currentValue) { throw new Error('invalid PKCS#7 padding') }
+      return currentValue
+    })
+    return buff.slice(0, buff.length - padSize)
+  }
+}
+
+// helper function, so that decryption/encryption funcs can take filePath of buffer
+const parseInputFileORBuffer = (input, callback) => {
+  if (typeof input === 'string') {
+    set1.breakIntoBlocks(input, 16, 'base64', (chunksFromFile) => {
+      callback(chunksFromFile)
+    })
+  } else if (input instanceof Buffer) {
+    callback(input.length > 16 ? splitBuffer(input) : [PKCSPad(input)])
+  } else {
+    throw new Error('invalid input (must be filePath (String) or Buffer)')
+  }
+}
+
+const decryptCBC = (input, key, iv, callback) => {
   const aes = new aesjs.AES(Buffer.from(key))
 
-  set1.breakIntoBlocks(filePath, 16, 'base64', (chunks) => {
+  parseInputFileORBuffer(input, (chunks) => {
     let plaintext = ''
-    let lastBuffer = iv
+    let lastBuffer = PKCSPad(iv)
     chunks.map((chunk) => {
       const currBuff = Buffer.from(chunk, 'base64')
       // 1. decrypt the current chunk
@@ -30,19 +62,19 @@ const decryptCBC = (filePath, key, iv, callback) => {
       const xored = xor(lastBuffer, decryptedBytes)
       // 3. update the last buffer
       lastBuffer = currBuff
-      // 4. plaintext is XOR of lastBuffer and the decrypted bytes
-      plaintext += Buffer.from(xored).toString('ascii')
+      // 4. plaintext is XOR of lastBuffer and the decrypted bytes, unpad and return ASCII
+      plaintext += PKCSValidateAndUnPad(Buffer.from(xored)).toString('ascii')
     })
     callback(plaintext)
   })
 }
 
-const encryptCBC = (filePath, key, iv, callback) => {
+const encryptCBC = (input, key, iv, callback) => {
   const aes = new aesjs.AES(Buffer.from(key))
 
-  set1.breakIntoBlocks(filePath, 16, 'ascii', (chunks) => {
+  parseInputFileORBuffer(input, (chunks) => {
     let ciphertext
-    let lastBuffer = iv
+    let lastBuffer = PKCSPad(iv)
     chunks.map((chunk, i) => {
       const currBuff = PKCSPad(Buffer.from(chunk, 'ascii'), 16)
       // 1. xor lastBuffer with plaintext (first time it's the IV)
@@ -54,7 +86,7 @@ const encryptCBC = (filePath, key, iv, callback) => {
       // 4. update ciphertext
       ciphertext = i === 0 ? encryptedBytes : Buffer.concat([ciphertext, encryptedBytes])
     })
-    callback(ciphertext.toString('base64'))
+    callback(ciphertext)
   })
 }
 
@@ -334,6 +366,7 @@ module.exports = {
   splitBuffer,
   detectECB,
   AES128ECB,
+  sameByteBuff,
   decryptAES128ECBPlusBuff,
   decryptAES128ECBPlusBuffGetPadding,
   parseToObj,

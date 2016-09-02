@@ -172,18 +172,28 @@ describe.only('set 2', function () {
   })
 
   describe('challenge 10', function () {
+    const key = 'YELLOW SUBMARINE'
     // IV is 16 bytes of value 0
-    let iv = []
-    for (var i = 0; i < 16; i++) { iv.push(`0x${0}`) }
+    const iv = set2.sameByteBuff(0, 16)
 
-    it('decrypt AES in CBC mode', function () {
-      set2.decryptCBC('aux/c10.txt', 'YELLOW SUBMARINE', Buffer.from(iv), (result) => {
+    it('decrypt AES in CBC mode - file', function () {
+      set2.decryptCBC('aux/c10.txt', key, Buffer.from(iv), (result) => {
         expect(result.split('\n')[0]).to.equal(`I'm back and I'm ringin' the bell `)
       })
     })
-    it('encrypt AES in CBC mode', function () {
-      set2.encryptCBC('aux/vanilla.txt', 'YELLOW SUBMARINE', Buffer.from(iv), (result) => {
-        expect(result.substring(0, 60)).to.equal(`CRIwqt4+szDbqkNY+I0qbNXPg1XLaCM5etQ5Bt9DRFV/xIN2k8Go7jtArLIy`)
+    it('encrypt AES in CBC mode - file', function () {
+      set2.encryptCBC('aux/vanilla.txt', key, Buffer.from(iv), (result) => {
+        expect(result.toString('base64').substring(0, 60)).to.equal(`CRIwqt4+szDbqkNY+I0qbNXPg1XLaCM5etQ5Bt9DRFV/xIN2k8Go7jtArLIy`)
+      })
+    })
+    it('encrypt AES in CBC mode - buffer', function () {
+      set2.encryptCBC(Buffer.from('hello everyone', 'ascii'), key, iv, (cipher) => {
+        expect(cipher.toString('base64')).to.equal('itkrUkWKow6len1YfrbKFg==')
+      })
+    })
+    it('decrypt AES in CBC mode - buffer', function () {
+      set2.decryptCBC(Buffer.from('itkrUkWKow6len1YfrbKFg==', 'base64'), key, iv, (plaintext) => {
+        expect(plaintext).to.equal('hello everyone')
       })
     })
   })
